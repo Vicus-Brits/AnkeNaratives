@@ -1,0 +1,66 @@
+@startuml
+title HestiService System - View Quote Use Case
+
+actor Customer as Customer
+participant "Navigation Bar" as NavBar
+participant "View Customer Quotes\nScreen" as ViewQuotesScreen
+participant "System" as System
+participant "Controller" as QuoteServiceController
+participant "Quote Table" as QuoteTable
+participant "Customer Table" as CustomerTable
+participant "Service Type Table" as ServiceTypeTable
+participant "Machine Type Table" as MachineTypeTable
+participant "Employee Table" as EmployeeTable
+participant "Quote Status Table" as QuoteStatusTable
+participant "Quote Type Table" as QuoteTypeTable
+participant "Audit Trail\nTable" as AuditTrailTable
+
+Customer -> NavBar: Click "Quotes" tab
+NavBar -> System: Redirect to "View Customer Quotes" screen
+System -> ViewQuotesScreen: Display "View Customer Quotes" screen
+
+alt Quote exists
+    ViewQuotesScreen -> System: Send request to QuoteServiceController
+    System -> QuoteServiceController: HTTP GET request
+    QuoteServiceController -> QuoteTable: LINQ Query to retrieve quotes
+    QuoteTable -> CustomerTable: Retrieve customer data
+    QuoteTable -> ServiceTypeTable: Retrieve service type data
+    QuoteTable -> MachineTypeTable: Retrieve machine type data
+    QuoteTable -> EmployeeTable: Retrieve employee data
+    QuoteTable -> QuoteStatusTable: Retrieve quote status data
+    QuoteTable -> QuoteTypeTable: Retrieve quote type data
+    QuoteTable -> QuoteServiceController: Return quotes data
+    QuoteServiceController -> System: Return quotes data
+    System -> ViewQuotesScreen: Display quotes table
+else No quotes found
+    ViewQuotesScreen -> System: Display "No items were found"
+else Error retrieving quotes
+    ViewQuotesScreen -> System: Display "There is an error with the system, please try again later"
+end
+
+alt Customer searches quotes
+    Customer -> ViewQuotesScreen: Enters quote type or employee name
+    ViewQuotesScreen -> System: Send search request
+    System -> QuoteServiceController: HTTP GET request
+    QuoteServiceController -> QuoteTable: LINQ Query to search quotes
+    QuoteTable -> CustomerTable: Retrieve customer data
+    QuoteTable -> ServiceTypeTable: Retrieve service type data
+    QuoteTable -> MachineTypeTable: Retrieve machine type data
+    QuoteTable -> EmployeeTable: Retrieve employee data
+    QuoteTable -> QuoteStatusTable: Retrieve quote status data
+    QuoteTable -> QuoteTypeTable: Retrieve quote type data
+    QuoteTable -> QuoteServiceController: Return search results
+    QuoteServiceController -> System: Return search results
+    System -> ViewQuotesScreen: Display search results
+
+    alt No search results
+        ViewQuotesScreen -> System: Display "Data not found"
+    end
+end
+
+Customer -> ViewQuotesScreen: Views quotes
+
+note over QuoteServiceController: Log audit trail details
+QuoteServiceController -> AuditTrailTable: Insert audit trail record
+
+@enduml
