@@ -1,66 +1,100 @@
 @startuml
-title HestiService System - View Quote Use Case
+title HestiService System - Create Parts Quote Use Case
 
-actor Customer as Customer
+actor Admin as Admin
 participant "Navigation Bar" as NavBar
-participant "View Customer Quotes\nScreen" as ViewQuotesScreen
+participant "View Work Orders\nScreen" as ViewWorkOrdersScreen
+participant "View Parts\nScreen" as ViewPartsScreen
 participant "System" as System
-participant "Controller" as QuoteServiceController
+participant "Controller" as WorkOrderController
+participant "Work Order Table" as WorkOrderTable
+participant "Service Request Table" as ServiceRequestTable
+participant "Machine Type Table" as MachineTypeTable
+participant "Work Order Status Table" as WorkOrderStatusTable
+participant "Employee Table" as EmployeeTable
+participant "Invoice Table" as InvoiceTable
+participant "Inventory Work Order Table" as InventoryWorkOrderTable
+participant "Inventory Table" as InventoryTable
+participant "Inventory Work Order Status Table" as InventoryWorkOrderStatusTable
 participant "Quote Table" as QuoteTable
 participant "Customer Table" as CustomerTable
 participant "Service Type Table" as ServiceTypeTable
-participant "Machine Type Table" as MachineTypeTable
-participant "Employee Table" as EmployeeTable
 participant "Quote Status Table" as QuoteStatusTable
 participant "Quote Type Table" as QuoteTypeTable
-participant "Audit Trail\nTable" as AuditTrailTable
+participant "Audit Trail Table" as AuditTrailTable
 
-Customer -> NavBar: Click "Quotes" tab
-NavBar -> System: Redirect to "View Customer Quotes" screen
-System -> ViewQuotesScreen: Display "View Customer Quotes" screen
+Admin -> NavBar: Click "Work Orders" tab
+NavBar -> System: Redirect to "View Work Orders" screen
+System -> ViewWorkOrdersScreen: Display "View Work Orders" screen
 
-alt Quote exists
-    ViewQuotesScreen -> System: Send request to QuoteServiceController
-    System -> QuoteServiceController: HTTP GET request
-    QuoteServiceController -> QuoteTable: LINQ Query to retrieve quotes
-    QuoteTable -> CustomerTable: Retrieve customer data
-    QuoteTable -> ServiceTypeTable: Retrieve service type data
-    QuoteTable -> MachineTypeTable: Retrieve machine type data
-    QuoteTable -> EmployeeTable: Retrieve employee data
-    QuoteTable -> QuoteStatusTable: Retrieve quote status data
-    QuoteTable -> QuoteTypeTable: Retrieve quote type data
-    QuoteTable -> QuoteServiceController: Return quotes data
-    QuoteServiceController -> System: Return quotes data
-    System -> ViewQuotesScreen: Display quotes table
-else No quotes found
-    ViewQuotesScreen -> System: Display "No items were found"
-else Error retrieving quotes
-    ViewQuotesScreen -> System: Display "There is an error with the system, please try again later"
+ViewWorkOrdersScreen -> System: Send request to WorkOrderController
+System -> WorkOrderController: HTTP GET request
+WorkOrderController -> WorkOrderTable: LINQ Query to retrieve work orders
+WorkOrderTable -> ServiceRequestTable: Retrieve service request data
+WorkOrderTable -> MachineTypeTable: Retrieve machine type data
+WorkOrderTable -> WorkOrderStatusTable: Retrieve work order status data
+WorkOrderTable -> EmployeeTable: Retrieve employee data
+WorkOrderTable -> InvoiceTable: Retrieve invoice data
+WorkOrderTable -> WorkOrderController: Return work orders data
+WorkOrderController -> System: Return work orders data
+System -> ViewWorkOrdersScreen: Display work orders
+
+WorkOrderController -> AuditTrailTable: Insert audit trail record
+
+alt No work orders found
+    ViewWorkOrdersScreen -> System: Display "No items were found"
 end
 
-alt Customer searches quotes
-    Customer -> ViewQuotesScreen: Enters quote type or employee name
-    ViewQuotesScreen -> System: Send search request
-    System -> QuoteServiceController: HTTP GET request
-    QuoteServiceController -> QuoteTable: LINQ Query to search quotes
-    QuoteTable -> CustomerTable: Retrieve customer data
-    QuoteTable -> ServiceTypeTable: Retrieve service type data
-    QuoteTable -> MachineTypeTable: Retrieve machine type data
-    QuoteTable -> EmployeeTable: Retrieve employee data
-    QuoteTable -> QuoteStatusTable: Retrieve quote status data
-    QuoteTable -> QuoteTypeTable: Retrieve quote type data
-    QuoteTable -> QuoteServiceController: Return search results
-    QuoteServiceController -> System: Return search results
-    System -> ViewQuotesScreen: Display search results
-
-    alt No search results
-        ViewQuotesScreen -> System: Display "Data not found"
-    end
+alt Error retrieving work orders
+    ViewWorkOrdersScreen -> System: Display "There is an error with the system, please try again later"
 end
 
-Customer -> ViewQuotesScreen: Views quotes
+Admin -> ViewWorkOrdersScreen: Enters search criteria
+ViewWorkOrdersScreen -> System: Send search request to WorkOrderController
+System -> WorkOrderController: HTTP GET request
+WorkOrderController -> WorkOrderTable: LINQ Query to search work orders
+WorkOrderTable -> WorkOrderController: Return search results
+WorkOrderController -> System: Return search results
+System -> ViewWorkOrdersScreen: Display search results
 
-note over QuoteServiceController: Log audit trail details
-QuoteServiceController -> AuditTrailTable: Insert audit trail record
+WorkOrderController -> AuditTrailTable: Insert audit trail record
+
+alt No matching work orders found
+    ViewWorkOrdersScreen -> System: Display "Data not found"
+end
+
+Admin -> ViewWorkOrdersScreen: Selects "View Parts" button
+ViewWorkOrdersScreen -> System: Send request to WorkOrderController
+System -> WorkOrderController: HTTP GET request
+WorkOrderController -> InventoryWorkOrderTable: LINQ Query to retrieve inventory work orders
+
+alt No inventory work orders found
+    ViewPartsScreen -> System: Display "No items were found"
+end
+
+alt Error retrieving inventory work orders
+    ViewPartsScreen -> System: Display "There is an error with the system, please try again later"
+end
+
+InventoryWorkOrderTable -> WorkOrderTable: Retrieve work order data
+InventoryWorkOrderTable -> InventoryTable: Retrieve inventory data
+InventoryWorkOrderTable -> InventoryWorkOrderStatusTable: Retrieve inventory work order status data
+InventoryWorkOrderTable -> WorkOrderController: Return inventory work orders data
+WorkOrderController -> System: Return inventory work orders data
+System -> ViewPartsScreen: Display inventory work orders
+
+Admin -> ViewPartsScreen: Clicks "Generate Parts Quote" button
+ViewPartsScreen -> System: Calculate quote fee
+System -> QuoteTable: Save quote details
+QuoteTable -> CustomerTable: Retrieve customer data
+QuoteTable -> ServiceTypeTable: Retrieve service type data
+QuoteTable -> MachineTypeTable: Retrieve machine type data
+QuoteTable -> EmployeeTable: Retrieve employee data
+QuoteTable -> QuoteStatusTable: Retrieve quote status data
+QuoteTable -> QuoteTypeTable: Retrieve quote type data
+QuoteTable -> System: Return saved quote data
+System -> ViewPartsScreen: Display generated quote
+
+WorkOrderController -> AuditTrailTable: Insert audit trail record
 
 @enduml

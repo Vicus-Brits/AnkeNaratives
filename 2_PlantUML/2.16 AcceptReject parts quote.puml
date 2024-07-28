@@ -1,5 +1,5 @@
 @startuml
-title HestiService System - View Quote Use Case
+title HestiService System - Accept Parts Quote Use Case
 
 actor Customer as Customer
 participant "Navigation Bar" as NavBar
@@ -13,52 +13,66 @@ participant "Machine Type Table" as MachineTypeTable
 participant "Employee Table" as EmployeeTable
 participant "Quote Status Table" as QuoteStatusTable
 participant "Quote Type Table" as QuoteTypeTable
-participant "Audit Trail\nTable" as AuditTrailTable
+participant "Invoice Table" as InvoiceTable
+participant "Discount Table" as DiscountTable
+participant "Work Order Table" as WorkOrderTable
+participant "Invoice Status Table" as InvoiceStatusTable
+participant "Audit Trail Table" as AuditTrailTable
 
 Customer -> NavBar: Click "Quotes" tab
 NavBar -> System: Redirect to "View Customer Quotes" screen
 System -> ViewQuotesScreen: Display "View Customer Quotes" screen
 
-alt Quote exists
-    ViewQuotesScreen -> System: Send request to QuoteServiceController
-    System -> QuoteServiceController: HTTP GET request
-    QuoteServiceController -> QuoteTable: LINQ Query to retrieve quotes
-    QuoteTable -> CustomerTable: Retrieve customer data
-    QuoteTable -> ServiceTypeTable: Retrieve service type data
-    QuoteTable -> MachineTypeTable: Retrieve machine type data
-    QuoteTable -> EmployeeTable: Retrieve employee data
-    QuoteTable -> QuoteStatusTable: Retrieve quote status data
-    QuoteTable -> QuoteTypeTable: Retrieve quote type data
-    QuoteTable -> QuoteServiceController: Return quotes data
-    QuoteServiceController -> System: Return quotes data
-    System -> ViewQuotesScreen: Display quotes table
-else No quotes found
+ViewQuotesScreen -> System: Send request to QuoteServiceController
+System -> QuoteServiceController: HTTP GET request
+QuoteServiceController -> QuoteTable: LINQ Query to retrieve quotes
+QuoteTable -> CustomerTable: Retrieve customer data
+QuoteTable -> ServiceTypeTable: Retrieve service type data
+QuoteTable -> MachineTypeTable: Retrieve machine type data
+QuoteTable -> EmployeeTable: Retrieve employee data
+QuoteTable -> QuoteStatusTable: Retrieve quote status data
+QuoteTable -> QuoteTypeTable: Retrieve quote type data
+QuoteTable -> QuoteServiceController: Return quotes data
+QuoteServiceController -> System: Return quotes data
+System -> ViewQuotesScreen: Display quotes table
+
+alt No quotes found
     ViewQuotesScreen -> System: Display "No items were found"
-else Error retrieving quotes
+end
+
+alt Error retrieving quotes
     ViewQuotesScreen -> System: Display "There is an error with the system, please try again later"
 end
 
-alt Customer searches quotes
-    Customer -> ViewQuotesScreen: Enters quote type or employee name
-    ViewQuotesScreen -> System: Send search request
-    System -> QuoteServiceController: HTTP GET request
-    QuoteServiceController -> QuoteTable: LINQ Query to search quotes
-    QuoteTable -> CustomerTable: Retrieve customer data
-    QuoteTable -> ServiceTypeTable: Retrieve service type data
-    QuoteTable -> MachineTypeTable: Retrieve machine type data
-    QuoteTable -> EmployeeTable: Retrieve employee data
-    QuoteTable -> QuoteStatusTable: Retrieve quote status data
-    QuoteTable -> QuoteTypeTable: Retrieve quote type data
-    QuoteTable -> QuoteServiceController: Return search results
-    QuoteServiceController -> System: Return search results
-    System -> ViewQuotesScreen: Display search results
+Customer -> ViewQuotesScreen: Selects "Accept" button
+ViewQuotesScreen -> System: Send request to QuoteServiceController
+System -> QuoteServiceController: HTTP GET request
+QuoteServiceController -> QuoteTable: LINQ Query to update quote status to "Approved"
 
-    alt No search results
-        ViewQuotesScreen -> System: Display "Data not found"
-    end
+QuoteTable -> CustomerTable: Retrieve customer data
+QuoteTable -> ServiceTypeTable: Retrieve service type data
+QuoteTable -> MachineTypeTable: Retrieve machine type data
+QuoteTable -> EmployeeTable: Retrieve employee data
+QuoteTable -> QuoteStatusTable: Retrieve quote status data
+QuoteTable -> QuoteTypeTable: Retrieve quote type data
+QuoteTable -> QuoteServiceController: Return updated quote data
+QuoteServiceController -> System: Return updated quote data
+
+alt Update failed
+    QuoteServiceController -> System: Return error message
+    System -> ViewQuotesScreen: Display error message
 end
 
-Customer -> ViewQuotesScreen: Views quotes
+System -> InvoiceTable: Create new invoice record
+InvoiceTable -> DiscountTable: Retrieve discount data
+InvoiceTable -> WorkOrderTable: Retrieve work order data
+InvoiceTable -> InvoiceStatusTable: Retrieve invoice status data
+InvoiceTable -> QuoteTable: Link quote data
+InvoiceTable -> CustomerTable: Link customer data
+InvoiceTable -> InvoiceStatusTable: Link invoice status data
+InvoiceTable -> QuoteServiceController: Return new invoice data
+QuoteServiceController -> System: Return new invoice data
+System -> ViewQuotesScreen: Remove "Accept" button from Actions column
 
 note over QuoteServiceController: Log audit trail details
 QuoteServiceController -> AuditTrailTable: Insert audit trail record
